@@ -47,3 +47,7 @@ Free services sleep after inactivity; initial wake-up can be slow. Active WebSoc
 - `tests/`: simulation and real WebSocket integration tests
 
 Fonts use optional Google Fonts CSS with local serif/sans fallback. Graphics and sounds do not depend on asset downloads. A WebGL-capable browser is required. Low quality caps pixel ratio and particle counts. Mobile checks use emulated viewport/touch; physical-device GPU and audio behavior can differ.
+
+## Latest verification
+
+2026-10-06: production build successful; 13 simulation/socket tests passed; two independent browsers completed the full round with identical results and no console errors. Native multi-touch injection passed in solo and online modes. See `docs/IMPLEMENTATION.md` and `artifacts/multiplayer-verification.json` for evidence.
