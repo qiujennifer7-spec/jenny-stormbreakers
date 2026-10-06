@@ -92,11 +92,11 @@ function sailTexture() {
     x.quadraticCurveTo(0, 17, 31, -3);
     x.stroke();
     x.fillStyle = "#f2e8cb";
-    x.fillRect(-44, 30, 88, 30);
+    x.fillRect(-56, 30, 112, 30);
     x.fillStyle = "#264b51";
-    x.font = "italic 37px Georgia";
+    x.font = "italic 33px Georgia";
     x.textAlign = "center";
-    x.fillText("Tina", 0, 55);
+    x.fillText("Jenny", 0, 55);
     x.lineWidth = 1;
     x.beginPath();
     x.moveTo(-25, 66);
