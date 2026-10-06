@@ -1,0 +1,130 @@
+{
+  "passed": true,
+  "method": "Desktop Chromium emulating 390x844; no claim about physical phone GPU",
+  "keyboard": true,
+  "soloPause": true,
+  "mutingPause": true,
+  "quality": "low",
+  "samples": [
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 48,
+      "geometries": 62,
+      "particles": 81,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 41,
+      "geometries": 57,
+      "particles": 90,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 32,
+      "geometries": 60,
+      "particles": 61,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 29,
+      "geometries": 57,
+      "particles": 48,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 38,
+      "geometries": 64,
+      "particles": 89,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 44,
+      "geometries": 65,
+      "particles": 61,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 45,
+      "geometries": 70,
+      "particles": 63,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 53,
+      "geometries": 65,
+      "particles": 45,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 46,
+      "geometries": 65,
+      "particles": 45,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 46,
+      "geometries": 65,
+      "particles": 77,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 39,
+      "geometries": 65,
+      "particles": 82,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    },
+    {
+      "fps": 60,
+      "frameMs": 16.7,
+      "drawCalls": 39,
+      "geometries": 65,
+      "particles": 78,
+      "particleLimit": 180,
+      "pixelRatio": 1,
+      "adaptiveScale": 1
+    }
+  ]
+}

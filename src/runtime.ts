@@ -32,16 +32,27 @@ export class GameRuntime {
   pending: { seq: number; input: Input; dt: number }[] = [];
   actions = new Set<"left" | "right" | "boost" | "repair" | "supply">();
   renderClock = 0;
+  verification = new URLSearchParams(location.search).has("verify");
+  snapshots: {
+    elapsed: number;
+    ships: Pick<
+      Ship,
+      "id" | "name" | "hp" | "score" | "kills" | "x" | "z" | "bot"
+    >[];
+  }[] = [];
   onChange?: () => void;
   onDisconnect?: () => void;
   disposed = false;
   constructor(el: HTMLElement) {
     this.scene = new SeaScene(el);
-    this.scene.onEvent = (t) => this.audio.effect(t);
+    this.scene.onEvent = (e, distance, pan) =>
+      this.audio.effect(e.type, distance, pan);
     this.animation = requestAnimationFrame(this.frame);
   }
   start(mode: Mode, difficulty: Difficulty, name: string) {
     this.disconnect();
+    this.scene.effects.clear();
+    this.audio.pause(false);
     this.world = createWorld(mode, difficulty);
     this.world.ships[0].name = name || "Jenny";
     this.playerId = "ship-0";
@@ -61,6 +72,9 @@ export class GameRuntime {
     room = "",
   ) {
     this.disconnect();
+    this.scene.effects.clear();
+    this.audio.pause(false);
+    this.audio.start();
     this.status = "connecting";
     this.onChange?.();
     const socket = new WebSocket(
@@ -112,6 +126,27 @@ export class GameRuntime {
       }
       if (msg.type === "state" && this.online) {
         this.world = msg.world;
+        if (this.verification) {
+          this.snapshots.push({
+            elapsed: this.world.elapsed,
+            ships: this.world.ships.map(
+              ({ id, name, hp, score, kills, x, z, bot }) => ({
+                id,
+                name,
+                hp,
+                score,
+                kills,
+                x,
+                z,
+                bot,
+              }),
+            ),
+          });
+          this.snapshots = this.snapshots.slice(-24);
+          this.scene.renderer.domElement.dataset.syncSnapshots = JSON.stringify(
+            this.snapshots,
+          );
+        }
         const auth = this.world.ships.find((s) => s.id === this.playerId);
         if (auth) {
           const next = { ...auth };
@@ -171,6 +206,7 @@ export class GameRuntime {
   returnHome() {
     this.disconnect();
     this.home = true;
+    this.scene.effects.clear();
     this.paused = false;
     this.stopInput();
     this.audio.pause(true);
@@ -181,6 +217,7 @@ export class GameRuntime {
     if (this.disposed) return;
     const dt = Math.min((now - this.last) / 1000 || 0, 0.1);
     this.last = now;
+    if (!document.hidden && !this.paused) this.scene.observeFrame(dt * 1000);
     if (!this.home && !this.paused && !this.world.ended) {
       this.accumulator += dt;
       while (this.accumulator >= 0.025) {
@@ -209,6 +246,13 @@ export class GameRuntime {
       }
     }
     if (!this.paused) this.renderClock += dt;
+    if (this.verification)
+      this.scene.renderer.domElement.dataset.audioStats = JSON.stringify({
+        state: this.audio.context?.state,
+        voices: this.audio.voices,
+        muted: this.audio.muted,
+        counts: this.audio.counts,
+      });
     this.scene.render(
       this.world,
       this.playerId,
@@ -223,6 +267,6 @@ export class GameRuntime {
     cancelAnimationFrame(this.animation);
     this.disconnect();
     this.scene.destroy();
-    this.audio.context?.close();
+    this.audio.destroy();
   }
 }

@@ -1,5 +1,7 @@
 import * as THREE from "three";
-import { ISLANDS, type World, type Ship } from "../shared/game";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { OceanEffects } from "./effects";
+import { ISLANDS, type World, type Ship, type Event } from "../shared/game";
 const gold = 0xdcb777,
   cream = 0xf3e6c7;
 const mat = (color: number) =>
@@ -31,33 +33,132 @@ function beam(
   o.position.copy(a).add(b).multiplyScalar(0.5);
   o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
 }
-function sailTexture() {
+function canvasTexture(
+  draw: (x: CanvasRenderingContext2D) => void,
+  size = 512,
+) {
   const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 256;
-  const x = c.getContext("2d")!;
-  x.fillStyle = "#f3e6c7";
-  x.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 256; i += 4) {
-    x.strokeStyle = "rgba(111,82,49,.045)";
+  c.width = c.height = size;
+  draw(c.getContext("2d")!);
+  const texture = new THREE.CanvasTexture(c);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+function sailTexture() {
+  return canvasTexture((x) => {
+    x.fillStyle = "#f2e8cb";
+    x.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 512; i += 3) {
+      x.strokeStyle = i % 6 ? "rgba(114,91,54,.05)" : "rgba(255,255,255,.2)";
+      x.beginPath();
+      x.moveTo(i, 0);
+      x.lineTo(i, 512);
+      x.stroke();
+      x.beginPath();
+      x.moveTo(0, i);
+      x.lineTo(512, i);
+      x.stroke();
+    }
+    x.strokeStyle = "#b4a078";
+    x.lineWidth = 2;
+    x.strokeRect(15, 15, 482, 482);
+    for (let i = 0; i < 512; i += 12) {
+      x.fillStyle = "#ab977344";
+      x.fillRect(23, i, 2, 5);
+      x.fillRect(487, i, 2, 5);
+    }
+    // Tiny nautical seal: sail, wave and elegant wordmark.
+    x.save();
+    x.translate(256, 292);
+    x.strokeStyle = x.fillStyle = "#264b51";
+    x.lineWidth = 2;
     x.beginPath();
-    x.moveTo(i, 0);
-    x.lineTo(i, 256);
+    x.arc(0, -20, 47, 0, Math.PI * 2);
     x.stroke();
+    x.beginPath();
+    x.moveTo(-3, -52);
+    x.lineTo(-3, -8);
+    x.lineTo(-31, -8);
+    x.closePath();
+    x.fill();
+    x.beginPath();
+    x.moveTo(3, -48);
+    x.lineTo(27, -11);
+    x.lineTo(3, -11);
+    x.closePath();
+    x.stroke();
+    x.beginPath();
+    x.moveTo(-31, -3);
+    x.quadraticCurveTo(0, 17, 31, -3);
+    x.stroke();
+    x.fillStyle = "#f2e8cb";
+    x.fillRect(-44, 30, 88, 30);
+    x.fillStyle = "#264b51";
+    x.font = "italic 37px Georgia";
+    x.textAlign = "center";
+    x.fillText("Tina", 0, 55);
+    x.lineWidth = 1;
+    x.beginPath();
+    x.moveTo(-25, 66);
+    x.quadraticCurveTo(0, 77, 25, 66);
+    x.stroke();
+    x.restore();
+  });
+}
+function woodTexture() {
+  const texture = canvasTexture((x) => {
+    x.fillStyle = "#896044";
+    x.fillRect(0, 0, 512, 512);
+    for (let row = 0; row < 8; row++) {
+      x.fillStyle = row % 2 ? "#80573e" : "#946a49";
+      x.fillRect(0, row * 64, 512, 62);
+      for (let i = 0; i < 15; i++) {
+        x.strokeStyle = "rgba(39,25,17,.16)";
+        x.beginPath();
+        x.moveTo(0, row * 64 + i * 4);
+        for (let n = 0; n <= 8; n++)
+          x.lineTo(n * 64, row * 64 + i * 4 + Math.sin(n * 1.8 + i) * 1.7);
+        x.stroke();
+      }
+    }
+  });
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  return texture;
+}
+/** Bake stationary parts by material; six ships require ~36 draws rather than hundreds. */
+function batchMeshes(root: THREE.Group) {
+  root.updateMatrixWorld(true);
+  const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const sources: THREE.Mesh[] = [];
+  root.traverse((o) => {
+    if (o instanceof THREE.Mesh && !Array.isArray(o.material)) {
+      const g = o.geometry.index
+        ? o.geometry.toNonIndexed()
+        : o.geometry.clone();
+      g.applyMatrix4(
+        new THREE.Matrix4()
+          .copy(root.matrixWorld)
+          .invert()
+          .multiply(o.matrixWorld),
+      );
+      let geometries = batches.get(o.material);
+      if (!geometries) {
+        geometries = [];
+        batches.set(o.material, geometries);
+      }
+      geometries.push(g);
+      sources.push(o);
+    }
+  });
+  for (const o of sources) {
+    o.removeFromParent();
+    o.geometry.dispose();
   }
-  x.strokeStyle = "#ceb98c";
-  x.lineWidth = 3;
-  x.strokeRect(8, 8, 240, 240);
-  x.fillStyle = "#284b50";
-  x.font = "italic 33px Georgia";
-  x.textAlign = "center";
-  x.fillText("Tina", 128, 162);
-  x.lineWidth = 1.5;
-  x.beginPath();
-  x.moveTo(104, 172);
-  x.quadraticCurveTo(128, 184, 152, 172);
-  x.stroke();
-  return new THREE.CanvasTexture(c);
+  for (const [m, geometries] of batches) {
+    const geometry = mergeGeometries(geometries);
+    if (geometry) mesh(geometry, m, root);
+    geometries.forEach((g) => g.dispose());
+  }
 }
 const colors = [0xe0b66a, 0x789caf, 0xc26a56, 0x799989, 0xba95b6, 0x8ba6cc];
 export function buildShip(index = 0) {
@@ -66,6 +167,8 @@ export function buildShip(index = 0) {
     dark = mat(0x302b26),
     deck = mat(0xb38a58),
     trim = mat(colors[index % 6]);
+  wood.map = woodTexture();
+  wood.color.set(0xffffff);
   const shape = new THREE.Shape();
   shape.moveTo(0, -10);
   shape.bezierCurveTo(3, -8, 4.2, -3, 4, 3);
@@ -182,6 +285,7 @@ export function buildShip(index = 0) {
     0.18,
     wood,
   );
+  batchMeshes(root);
   return root;
 }
 export class SeaScene {
@@ -191,14 +295,15 @@ export class SeaScene {
   ships = new Map<string, THREE.Group>();
   loot = new Map<number, THREE.Group>();
   shots = new Map<number, THREE.Mesh>();
-  effects: {
-    mesh: THREE.Mesh;
-    vx: number;
-    vz: number;
-    vy: number;
-    life: number;
-    max: number;
-  }[] = [];
+  effects: OceanEffects;
+  wakeTimers = new Map<string, number>();
+  frameMs = 16.7;
+  slowFrames = 0;
+  adaptiveScale = 1;
+  performanceClock = 0;
+  lastPerformanceTime = performance.now();
+  renderCount = 0;
+  cloudTime = { value: 0 };
   water: THREE.Mesh;
   ring: THREE.Mesh;
   focus = new THREE.Vector3();
@@ -209,7 +314,7 @@ export class SeaScene {
   resizeObserver: ResizeObserver;
   ray = new THREE.Raycaster();
   plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  onEvent?: (type: string) => void;
+  onEvent?: (event: Event, distance: number, pan: number) => void;
   constructor(public container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -229,15 +334,34 @@ export class SeaScene {
     const sun = new THREE.DirectionalLight(0xffe5b1, 3);
     sun.position.set(-100, 180, -120);
     this.scene.add(sun);
+    this.effects = new OceanEffects(this.scene);
     const uniforms = { time: { value: 0 }, storm: { value: 0 } };
     const waterMat = new THREE.ShaderMaterial({
       uniforms,
-      vertexShader: `uniform float time; varying vec3 wp; varying vec3 norm; void main(){vec3 p=position;float a=p.x*.055+time*.8;float b=p.z*.075+time*.6;p.z+=0.;p.y=sin(a)*.65+cos(b)*.48;norm=normalize(vec3(-cos(a)*.036,1.,sin(b)*.036));wp=p;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
-      fragmentShader: `uniform float time;uniform float storm;varying vec3 wp;varying vec3 norm;void main(){vec3 v=normalize(cameraPosition-wp);vec3 n=normalize(norm+vec3(sin(wp.z*.6+time)*.018,0.,cos(wp.x*.5-time)*.018));float fres=pow(1.-max(dot(n,v),0.),3.);float sun=pow(max(dot(reflect(-normalize(vec3(-.4,1.,-.7)),n),v),0.),80.);float wave=sin(wp.x*.21+wp.z*.31+time)*sin(wp.z*.16-time*.7);vec3 col=mix(vec3(.018,.17,.20),vec3(.10,.38,.40),wave*.16+.42);col=mix(col,vec3(.42,.62,.63),fres*.65);col+=sun*vec3(.8,.67,.4);float foam=smoothstep(.975,1.,sin(wp.x*.43+time)*cos(wp.z*.35-time*.7));col+=foam*.055;col*=1.-storm*.25;gl_FragColor=vec4(col,1.);}`,
+      vertexShader: `
+        uniform float time;uniform float storm;varying vec3 wp;varying vec3 norm;
+        void main(){vec3 p=position;float a=p.x*.065+p.z*.025+time*.9;float b=p.z*.082-p.x*.018+time*.65;float amp=1.+storm*.65;
+        p.y=(sin(a)*.7+cos(b)*.42)*amp;norm=normalize(vec3((-cos(a)*.0455-sin(b)*.00756)*amp,1.,(-cos(a)*.0175+sin(b)*.03444)*amp));
+        wp=p;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+      fragmentShader: `
+        uniform float time;uniform float storm;varying vec3 wp;varying vec3 norm;
+        void main(){vec3 view=normalize(cameraPosition-wp);vec3 n=normalize(norm+vec3(sin(wp.z*.65+wp.x*.27+time)*.032,0.,cos(wp.x*.54-wp.z*.37-time)*.028));
+        float fres=pow(1.-max(dot(n,view),0.),3.);vec3 reflected=reflect(-view,n);
+        float cloud=smoothstep(.55,.83,sin(reflected.x*18.+time*.013)*.2+cos(reflected.z*13.)*.25+.5);
+        vec3 sky=mix(vec3(.30,.53,.58),vec3(.77,.83,.79),cloud);
+        float sun=pow(max(dot(reflect(-normalize(vec3(-.4,1.,-.7)),n),view),0.),110.);
+        float swell=sin(wp.x*.065+wp.z*.025+time*.9);vec3 col=mix(vec3(.013,.13,.18),vec3(.045,.30,.32),.5+swell*.2);
+        col=mix(col,sky,fres*.62);col+=sun*vec3(.95,.78,.48);
+        float lace=.5+.5*sin(wp.x*.42-wp.z*.31+time*.55);
+        float foam=smoothstep(.96,1.,swell)*lace;col+=vec3(.04,.075,.07)*foam;
+        col*=1.-storm*.2;gl_FragColor=vec4(col,1.);}`,
     });
     const waterGeo = new THREE.PlaneGeometry(2200, 2200, 160, 160);
     waterGeo.rotateX(-Math.PI / 2);
     this.water = mesh(waterGeo, waterMat, this.scene);
+    const detailGeo = new THREE.PlaneGeometry(400, 400, 100, 100);
+    detailGeo.rotateX(-Math.PI / 2);
+    mesh(detailGeo, waterMat, this.scene, 0, 0.025, 0);
     for (const island of ISLANDS) {
       const group = new THREE.Group();
       group.position.set(island.x, -0.6, island.z);
@@ -292,17 +416,43 @@ export class SeaScene {
           leaf.rotation.x = Math.cos(k * 1.25) * 1.1;
         }
       }
+      const materials = new Map<string, THREE.Material>();
+      group.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          const m = o.material as THREE.MeshStandardMaterial;
+          const key = m.color.getHexString();
+          if (materials.has(key)) {
+            m.dispose();
+            o.material = materials.get(key)!;
+          } else materials.set(key, m);
+        }
+      });
+      batchMeshes(group);
     }
+    const sky = mesh(
+      new THREE.SphereGeometry(1200, 24, 12),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {},
+        vertexShader: `varying vec3 direction;void main(){direction=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+        fragmentShader: `varying vec3 direction;void main(){float height=max(0.,direction.y);vec3 c=mix(vec3(.59,.72,.71),vec3(.13,.35,.46),pow(height,.6));float sun=pow(max(dot(direction,normalize(vec3(-.4,.8,-.6))),0.),220.);gl_FragColor=vec4(c+sun*vec3(.55,.4,.16),1.);}`,
+      }),
+      this.scene,
+    );
+    sky.frustumCulled = false;
+    const clouds = new THREE.Group();
+    this.scene.add(clouds);
     const cloudMat = new THREE.MeshLambertMaterial({
       color: 0xe5e6d6,
       transparent: true,
       opacity: 0.7,
     });
-    for (let i = 0; i < 22; i++) {
+    for (let i = 0; i < 16; i++) {
       const g = new THREE.Group();
       g.position.set(
         Math.sin(i * 2.4) * 450,
-        100 + (i % 3) * 20,
+        45 + (i % 3) * 13,
         Math.cos(i * 2.4) * 450,
       );
       for (let k = 0; k < 4; k++) {
@@ -316,8 +466,9 @@ export class SeaScene {
         );
         c.scale.set(1.7, 0.55, 1);
       }
-      this.scene.add(g);
+      clouds.add(g);
     }
+    batchMeshes(clouds);
     const rgeo = new THREE.RingGeometry(179, 180, 128);
     rgeo.rotateX(-Math.PI / 2);
     mesh(
@@ -361,9 +512,31 @@ export class SeaScene {
   }
   setQuality(q: string) {
     this.quality = q;
-    this.renderer.setPixelRatio(
-      Math.min(devicePixelRatio, q === "low" ? 1 : 1.8),
-    );
+    this.adaptiveScale = 1;
+    this.slowFrames = 0;
+    this.applyResolution();
+  }
+  applyResolution() {
+    const max =
+      this.quality === "low"
+        ? 1
+        : matchMedia("(pointer:coarse)").matches
+          ? 1.35
+          : 1.8;
+    const ratio = Math.min(devicePixelRatio, max) * this.adaptiveScale;
+    this.renderer.setPixelRatio(ratio);
+    this.effects.setQuality(this.quality === "low", ratio);
+  }
+  observeFrame(ms: number) {
+    if (ms <= 0 || ms > 120) return;
+    this.frameMs = this.frameMs * 0.95 + ms * 0.05;
+    if (this.frameMs > 25) this.slowFrames++;
+    else this.slowFrames = Math.max(0, this.slowFrames - 2);
+    if (this.slowFrames > 150 && this.adaptiveScale > 0.7) {
+      this.adaptiveScale = Math.max(0.7, this.adaptiveScale - 0.15);
+      this.slowFrames = 0;
+      this.applyResolution();
+    }
   }
   project(s: { x: number; z: number }, y = 2) {
     const v = new THREE.Vector3(s.x, y, s.z).project(this.camera);
@@ -386,41 +559,6 @@ export class SeaScene {
       ? { x: p.x, z: p.z }
       : null;
   }
-  burst(type: string, x: number, z: number) {
-    const count = this.quality === "low" ? 6 : 16;
-    for (let i = 0; i < count; i++) {
-      const smoke = i > count / 2;
-      const m = mesh(
-        new THREE.IcosahedronGeometry(type === "sink" ? 1.6 : 0.7, 0),
-        new THREE.MeshBasicMaterial({
-          color:
-            type === "loot"
-              ? gold
-              : type === "fire"
-                ? smoke
-                  ? 0x727f7c
-                  : 0xffca72
-                : smoke
-                  ? 0xceedde
-                  : 0xff9b42,
-          transparent: true,
-          opacity: 1,
-        }),
-        this.scene,
-        x,
-        3,
-        z,
-      );
-      this.effects.push({
-        mesh: m,
-        vx: (Math.random() - 0.5) * 12,
-        vz: (Math.random() - 0.5) * 12,
-        vy: 2 + Math.random() * 9,
-        life: smoke ? 1.4 : 0.5,
-        max: smoke ? 1.4 : 0.5,
-      });
-    }
-  }
   render(
     w: World,
     playerId: string,
@@ -441,7 +579,7 @@ export class SeaScene {
       const s = s0.id === playerId ? player : s0;
       let group = this.ships.get(s.id);
       if (!group) {
-        group = buildShip(w.ships.indexOf(s));
+        group = buildShip(w.ships.indexOf(s0));
         this.scene.add(group);
         this.ships.set(s.id, group);
         const ring = new THREE.Mesh(
@@ -479,7 +617,7 @@ export class SeaScene {
           Math.cos(t * 0.8 + s.x * 0.06) * 0.025 +
             (s.dead > 0 ? (5 - s.dead) * 0.12 : 0),
         );
-        group.visible = s.dead < 3;
+        group.visible = s.dead === 0 || s.dead > 1.5;
       }
       const ring = group.getObjectByName("selection")!;
       ring.position.y = home ? -1 : -group.position.y + 0.7;
@@ -490,35 +628,17 @@ export class SeaScene {
         ).material.color.set(
           s.id === playerId ? gold : colors[w.ships.indexOf(s)],
         );
+      const wakeTime = (this.wakeTimers.get(s.id) || 0) + dt;
       if (
         !home &&
         Math.abs(s.speed) > 1 &&
         s.dead === 0 &&
-        Math.random() < 0.45
+        dt > 0 &&
+        wakeTime > (this.quality === "low" ? 0.15 : 0.08)
       ) {
-        const wake = mesh(
-          new THREE.CircleGeometry(1 + Math.random(), 10),
-          new THREE.MeshBasicMaterial({
-            color: 0xc5e1d3,
-            transparent: true,
-            opacity: 0.38,
-            side: THREE.DoubleSide,
-          }),
-          this.scene,
-          s.x - Math.sin(s.a) * 8,
-          0.35,
-          s.z + Math.cos(s.a) * 8,
-        );
-        wake.rotation.x = -Math.PI / 2;
-        this.effects.push({
-          mesh: wake,
-          vx: (Math.random() - 0.5) * 2,
-          vz: (Math.random() - 0.5) * 2,
-          vy: 0,
-          life: 1.5,
-          max: 1.5,
-        });
-      }
+        this.effects.wake(s.x, s.z, s.a, s.speed);
+        this.wakeTimers.set(s.id, 0);
+      } else this.wakeTimers.set(s.id, wakeTime);
     }
     for (const item of w.loot) {
       let g = this.loot.get(item.id);
@@ -580,22 +700,15 @@ export class SeaScene {
     if (!home)
       for (const e of w.events)
         if (e.id > this.lastEvent) {
-          this.burst(e.type, e.x, e.z);
-          if (Math.hypot(e.x - player.x, e.z - player.z) < 130)
-            this.onEvent?.(e.type);
+          const distance = Math.hypot(e.x - player.x, e.z - player.z);
+          if (distance < 180) {
+            this.effects.burst(e, this.quality === "low");
+            this.onEvent?.(e, distance, (e.x - player.x) / 90);
+          }
         }
     this.lastEvent = w.events.at(-1)?.id || 0;
-    for (const e of this.effects) {
-      e.life -= dt;
-      e.mesh.position.x += e.vx * dt;
-      e.mesh.position.z += e.vz * dt;
-      e.mesh.position.y += e.vy * dt;
-      (e.mesh.material as THREE.MeshBasicMaterial).opacity =
-        Math.max(0, e.life / e.max) * 0.65;
-      e.mesh.scale.addScalar(dt * 0.9);
-      if (e.life <= 0) this.disposeObject(e.mesh);
-    }
-    this.effects = this.effects.filter((e) => e.life > 0);
+    this.effects.points.visible = !home;
+    this.effects.update(dt);
     this.ring.visible = !home && w.mode === "storm";
     this.ring.scale.setScalar(w.stormRadius);
     if (home) {
@@ -612,6 +725,26 @@ export class SeaScene {
       this.camera.lookAt(player.x, 0, player.z - 9);
     }
     this.renderer.render(this.scene, this.camera);
+    const performanceTime = performance.now();
+    this.performanceClock +=
+      (performanceTime - this.lastPerformanceTime) / 1000;
+    this.lastPerformanceTime = performanceTime;
+    this.renderCount++;
+    if (this.performanceClock > 1) {
+      const canvas = this.renderer.domElement;
+      canvas.dataset.renderStats = JSON.stringify({
+        fps: Math.round(this.renderCount / this.performanceClock),
+        frameMs: Math.round(this.frameMs * 10) / 10,
+        drawCalls: this.renderer.info.render.calls,
+        geometries: this.renderer.info.memory.geometries,
+        particles: this.effects.active,
+        particleLimit: this.effects.limit,
+        pixelRatio: this.renderer.getPixelRatio(),
+        adaptiveScale: this.adaptiveScale,
+      });
+      this.performanceClock = 0;
+      this.renderCount = 0;
+    }
   }
   disposeObject(obj: THREE.Object3D) {
     obj.removeFromParent();
@@ -627,6 +760,7 @@ export class SeaScene {
   }
   destroy() {
     this.resizeObserver.disconnect();
+    this.effects.destroy();
     this.scene.traverse((o) => {
       if (o instanceof THREE.Mesh) {
         o.geometry.dispose();

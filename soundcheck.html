@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Jenny 音效试听</title>
+    <style>
+      body {
+        background: #092a33;
+        color: #f2ecd9;
+        font-family: system-ui;
+        margin: 0;
+        padding: 32px;
+        max-width: 760px;
+      }
+      h1 {
+        font-size: 26px;
+      }
+      p {
+        color: #a6b9b3;
+        line-height: 1.8;
+      }
+      button {
+        background: #e1bb76;
+        color: #092a33;
+        border: 0;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      label {
+        display: block;
+        margin: 20px 0;
+      }
+      output {
+        display: block;
+        white-space: pre-wrap;
+        color: #a6d6c9;
+        line-height: 1.8;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Jenny · 音效试听</h1>
+    <p>
+      由 Web Audio
+      实时合成。点击按钮试听海浪、炮击、爆炸、沉船、落水和补给。无需素材下载，也无需麦克风权限。
+    </p>
+    <div id="controls"></div>
+    <label
+      >音量
+      <input
+        id="volume"
+        type="range"
+        min="0"
+        max="1"
+        step=".05"
+        value=".35" /></label
+    ><button id="mute">静音</button><button id="pause">暂停声音</button
+    ><output id="meter"></output>
+    <script type="module" src="/src/SoundCheck.ts"></script>
+  </body>
+</html>

@@ -4,6 +4,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     rollupOptions: {
+      input: { main: "index.html", soundcheck: "soundcheck.html" },
       output: {
         manualChunks: { three: ["three"], react: ["react", "react-dom"] },
       },

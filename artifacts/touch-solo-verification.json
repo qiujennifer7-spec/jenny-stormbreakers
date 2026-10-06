@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "online": false,
+  "method": "Native multi-touch event injection in desktop Chromium; emulated viewports",
+  "initial": "translate(0 102) rotate(0)",
+  "after": "translate(1.4682860991436752 100.10154380322814) rotate(37.71874564761643)",
+  "stopped": "translate(6.240215921360626 93.93156116371959) rotate(37.71874564761653)",
+  "cooldown": "↠\n右舷齐射\n2.9s",
+  "pause": "02:57",
+  "viewports": [
+    "390x844",
+    "844x390",
+    "768x1024"
+  ]
+}

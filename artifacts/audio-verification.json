@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "method": "Real Web Audio output measured by AnalyserNode; waveform presence, mute, pause/resume and bounded voices verified. Human subjective listening still recommended.",
+  "measurements": [
+    {
+      "effect": "sea",
+      "state": "running",
+      "muted": false,
+      "paused": false,
+      "rms": 0.0058,
+      "peakRms": 0.00909,
+      "voices": 0,
+      "counts": {}
+    },
+    {
+      "effect": "fire",
+      "state": "running",
+      "muted": false,
+      "paused": false,
+      "rms": 0.00954,
+      "peakRms": 0.07857,
+      "voices": 1,
+      "counts": {
+        "fire": 1
+      }
+    },
+    {
+      "effect": "hit",
+      "state": "running",
+      "muted": false,
+      "paused": false,
+      "rms": 0.00592,
+      "peakRms": 0.05324,
+      "voices": 1,
+      "counts": {
+        "fire": 1,
+        "hit": 1
+      }
+    },
+    {
+      "effect": "sink",
+      "state": "running",
+      "muted": false,
+      "paused": false,
+      "rms": 0.02045,
+      "peakRms": 0.05651,
+      "voices": 1,
+      "counts": {
+        "fire": 1,
+        "hit": 1,
+        "sink": 1
+      }
+    },
+    {
+      "effect": "splash",
+      "state": "running",
+      "muted": false,
+      "paused": false,
+      "rms": 0.0077,
+      "peakRms": 0.01511,
+      "voices": 1,
+      "counts": {
+        "fire": 1,
+        "hit": 1,
+        "sink": 1,
+        "splash": 1
+      }
+    },
+    {
+      "effect": "loot",
+      "state": "running",
+      "muted": false,
+      "paused": false,
+      "rms": 0.00693,
+      "peakRms": 0.01708,
+      "voices": 1,
+      "counts": {
+        "fire": 1,
+        "hit": 1,
+        "sink": 1,
+        "splash": 1,
+        "loot": 1
+      }
+    }
+  ],
+  "muted": {
+    "effect": "loot",
+    "state": "running",
+    "muted": true,
+    "paused": false,
+    "rms": 0,
+    "peakRms": 0.01708,
+    "voices": 0,
+    "counts": {
+      "fire": 1,
+      "hit": 1,
+      "sink": 1,
+      "splash": 1,
+      "loot": 1
+    }
+  }
+}

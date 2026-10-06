@@ -1259,3 +1259,10 @@ html[lang="en"] h1 > span {
     transition: none !important;
   }
 }
+
+@media (max-height: 720px) and (min-width: 850px) {
+  .app.home {
+    min-height: 760px;
+    overflow: auto;
+  }
+}

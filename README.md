@@ -1,10 +1,10 @@
 # Jenny · 破风者 / Jenny Stormbreakers
 
-A playable bilingual 3D sailing battle. React + TypeScript + Three.js, authoritative Node.js / WebSocket server. All ship geometry, islands, sail textures, water shaders, particles and sounds are generated in code. No LLM API or external art assets.
+可玩的中英文 3D 帆船海战游戏。React + TypeScript + Three.js，Node.js + WebSocket 服务器统一计算命中、血量、积分和胜负。所有模型、木纹、帆布、海水、云、特效和音效均通过代码生成，无大模型 API 或外部美术依赖。
 
-## Run
+## 启动
 
-Node 22.12+ recommended.
+Node.js 22.12+：
 
 ```sh
 npm ci
@@ -12,42 +12,38 @@ npm run build
 npm start
 ```
 
-Open http://localhost:3417 (PORT overrides the port). Development: run `npm start` and `npm run dev` in two terminals, then open http://localhost:5417. Vite proxies `/ws` to port 3417. `npm test` runs simulation and live socket integration tests; start the server first. `TEST_WS_URL` can target another server.
+访问 http://localhost:3417。开发另开终端运行 `npm run dev`，访问 http://localhost:5417。`npm test` 自行启动临时联机服务器；`npm run package` 使用 Python 3 标准库创建源码 ZIP。
 
-## Play
+## 操作
 
-- WASD: forward/reverse/turn. Q/E: port/starboard broadside. Space: boost. R: repair. F: resupply. Esc: menu.
-- Touch: hold your own ship and drag; release to stop. Another finger can operate cannons simultaneously. No orbit camera; pointer capture and touch-action prevent scroll interference.
-- Three minute rounds; +100 per enemy sunk, +35 per treasure. Highest score wins; equal scores share victory. Respawn after 5 seconds with score retained and 3 seconds invulnerability.
-- Both batteries reload independently in 3s. Three projectiles each, 28 damage each, about 105m range.
-- Boost 2s / 12s cooldown. Repair +35HP / 18s cooldown. Emergency supply +20HP + reload / 25s cooldown. Floating supplies +25HP + reload.
-- Battle, shrinking storm (10 HP/s outside), or extra treasure. Bots obey the same combat rules.
-- Solo truly pauses in menus and when hidden. Online world continues during menus and backgrounding. Inactive movement input expires server-side after 350ms.
+WASD 航行，Q / E 左右舷炮，空格冲刺，R 修复，F 补给，Esc 菜单。手机 / iPad 按住自己的船拖动、松手停船，另一根手指同时开炮。每局 3 分钟：击沉 +100，宝箱 +35，最高分获胜；沉船 5 秒重生并保留积分。左右舷独立装填 3 秒。
 
-## Multiplayer
+人机练习真正暂停；联机菜单继续运行。每房六个船位，真人加入替代电脑，离开后电脑接管。房间即建即开，晚加入继承电脑船当前状态与剩余时间。支持匹配、私人房间、邀请码加入，三种模式和三级电脑难度。
 
-Quick match groups public rooms by mode and difficulty. Create room makes a private code-only room. Each room has six ship slots. Humans replace AI in those slots, retaining that slot's current ship state; AI takes over on disconnect. The room starts immediately, so late joiners share the remaining round time. Ended rooms cannot be joined. Share the invite link or type the five-character code.
+## 文档与证据
 
-Server advances simulation at 20Hz and publishes authoritative state. Browser predicts only movement using the same collision/speed rules and replays unacknowledged inputs after server snapshots. No client-supplied damage, score, HP or position is accepted. Inputs are sanitized, sequenced, rate-limited and payload-limited. Server validates same-origin production connections. Socket heartbeat, backpressure limits, idle/finished-room cleanup, and graceful shutdown are included. There is no account system, persistent ranking or cross-instance room storage.
+- [中文操作说明](docs/中文操作说明.md)：完整规则、电脑和触屏操作、设置和常见问题。
+- [原始需求验收清单](docs/需求验收清单.md)：逐项核对及明确验收边界。
+- [部署与维护](docs/部署与维护.md)：Render Free、测试复现与服务限制。
+- [交付记录](docs/交付记录.md)：本次收尾测试和未完成的公网 / 实机验收。
+- [阶段实现记录](docs/IMPLEMENTATION.md)：初始三个阶段。
+- `artifacts/`：浏览器、音效和联机验收证据。
+- `/soundcheck.html`：海浪、开炮、命中、沉船、落水和拾取试听。
 
-## Render Free
+Render Free 配置在 `render.yaml`：构建 `npm ci && npm run build`，启动 `npm start`，健康路径 `/health`。前端和 WSS 使用一个服务同一域名。账号银行卡预授权完成并通知后执行正式部署；当前尚未宣称公网已上线。
 
-Create a **Web Service**, connect this repo, choose **Node** and **Free**, build `npm ci && npm run build`, start `npm start`, health path `/health`. Both static React assets and WebSocket endpoint run on the same origin. Blueprint: `render.yaml`.
+## 源码结构
 
-Free services sleep after inactivity; initial wake-up can be slow. Active WebSocket traffic keeps the instance active. Rooms live in memory and reset when the service restarts; the client shows connection loss and offers return to port. No paid database or add-on is required.
+| 文件 | 职责 |
+| --- | --- |
+| shared/game.ts | 游戏规则、AI、碰撞、伤害、积分和输入校验 |
+| server/index.ts | 20Hz服务器、房间、匹配、托管、连接清理 |
+| src/runtime.ts | 单机循环、网络生命周期、移动预测 |
+| src/scene.ts | 程序化3D、海水、天空、帆布与木纹 |
+| src/effects.ts | 固定容量粒子池 |
+| src/audio.ts | 合成声音、限声部、静音与暂停 |
+| src/App.tsx / style.css | 双语 UI、键盘与多指触控 |
+| tests/ | 游戏、粒子池和真实 WebSocket 验证 |
+| scripts/ | 浏览器验收与源码打包 |
 
-## Files
-
-- `shared/game.ts`: simulation, AI, damage, movement, score and input validation
-- `src/scene.ts`: generated 3D scene and effects
-- `src/runtime.ts`: local game loop, prediction, connection lifecycle
-- `src/App.tsx`, `src/style.css`: Chinese/English UI, touch and keyboard controls
-- `src/audio.ts`: Web Audio synthesized ambience and effects
-- `server/index.ts`: room matchmaking, authority and hosting
-- `tests/`: simulation and real WebSocket integration tests
-
-Fonts use optional Google Fonts CSS with local serif/sans fallback. Graphics and sounds do not depend on asset downloads. A WebGL-capable browser is required. Low quality caps pixel ratio and particle counts. Mobile checks use emulated viewport/touch; physical-device GPU and audio behavior can differ.
-
-## Latest verification
-
-2026-10-06: production build successful; 13 simulation/socket tests passed; two independent browsers completed the full round with identical results and no console errors. Native multi-touch injection passed in solo and online modes. See `docs/IMPLEMENTATION.md` and `artifacts/multiplayer-verification.json` for evidence.
+免费实例空闲休眠，冷启动可能慢；房间在内存中，服务重启即丢失。无账号、持久排名或跨实例房间存储。字体可选 Google Fonts，失败时使用本地字体；图形声音不需要下载素材。需 WebGL 浏览器。移动端验证包含视口与触控模拟，真实设备性能仍需实机确认。

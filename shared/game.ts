@@ -50,7 +50,7 @@ export type Loot = {
 };
 export type Event = {
   id: number;
-  type: "fire" | "hit" | "sink" | "loot" | "storm";
+  type: "fire" | "hit" | "sink" | "loot" | "storm" | "splash";
   x: number;
   z: number;
   ship?: string;
@@ -365,7 +365,14 @@ export function stepWorld(w: World, dt: number) {
     b.x += b.vx * dt;
     b.z += b.vz * dt;
     b.life -= dt;
-    if (ISLANDS.some((i) => Math.hypot(b.x - i.x, b.z - i.z) < i.r)) b.life = 0;
+    if (b.life <= 0) {
+      emit(w, "splash", b.x, b.z);
+      continue;
+    }
+    if (ISLANDS.some((i) => Math.hypot(b.x - i.x, b.z - i.z) < i.r)) {
+      b.life = 0;
+      emit(w, "splash", b.x, b.z);
+    }
     for (const s of w.ships) {
       if (s.id === b.owner || s.dead > 0 || b.life <= 0) continue;
       const dx = b.x - ox,

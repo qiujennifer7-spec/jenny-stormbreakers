@@ -4,3 +4,4 @@ dist/
 artifacts/*.webm
 playwright-report/
 test-results/
+delivery/

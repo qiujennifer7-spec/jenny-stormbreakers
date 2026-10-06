@@ -1,7 +1,36 @@
-import { test } from "node:test";
+import { test, before, after } from "node:test";
+import { spawn, type ChildProcess } from "node:child_process";
 import assert from "node:assert/strict";
 import { WebSocket } from "ws";
-const url = process.env.TEST_WS_URL || "ws://127.0.0.1:3417/ws";
+let url = process.env.TEST_WS_URL || "";
+let child: ChildProcess | undefined;
+before(async () => {
+  if (url) return;
+  await new Promise<void>((resolve, reject) => {
+    child = spawn(process.execPath, ["--import", "tsx", "server/index.ts"], {
+      env: { ...process.env, PORT: "0", NODE_ENV: "production" },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const timeout = setTimeout(
+      () => reject(Error("Test server startup timeout")),
+      10000,
+    );
+    child.stdout!.on("data", (b) => {
+      const match = String(b).match(/listening on (\d+)/);
+      if (match) {
+        url = `ws://127.0.0.1:${match[1]}/ws`;
+        clearTimeout(timeout);
+        resolve();
+      }
+    });
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (!url) reject(Error(`Server exited ${code}`));
+    });
+  });
+});
+after(() => child?.kill("SIGTERM"));
+
 function connect(
   join: Record<string, unknown>,
 ): Promise<{ ws: WebSocket; msg: any; states: any[] }> {
@@ -119,5 +148,42 @@ test("quick taps survive an input release before the next server tick, and idle 
     assert.equal(idle.speed, 0);
   } finally {
     a.ws.close();
+  }
+});
+
+test("automatic matchmaking fills exactly six slots and sends the seventh to a new room", async () => {
+  const clients: Awaited<ReturnType<typeof connect>>[] = [];
+  try {
+    for (let i = 0; i < 7; i++)
+      clients.push(
+        await connect({
+          kind: "match",
+          mode: "storm",
+          difficulty: "easy",
+          name: `Fleet ${i + 1}`,
+        }),
+      );
+    const first = clients[0].msg.room;
+    assert.ok(clients.slice(0, 6).every((c) => c.msg.room === first));
+    assert.notEqual(clients[6].msg.room, first);
+    await wait(250);
+    assert.ok(
+      clients
+        .slice(0, 6)
+        .every(
+          (c) => c.states.at(-1).ships.filter((s: any) => !s.bot).length === 6,
+        ),
+    );
+    const sample = clients[0].states.at(-2);
+    for (const c of clients.slice(1, 6)) {
+      const same = c.states.find((w: any) => w.elapsed === sample.elapsed);
+      assert.ok(same);
+      assert.deepEqual(
+        same.ships.map((s: any) => [s.id, s.hp, s.score, s.kills]),
+        sample.ships.map((s: any) => [s.id, s.hp, s.score, s.kills]),
+      );
+    }
+  } finally {
+    clients.forEach((c) => c.ws.close());
   }
 });

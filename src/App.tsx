@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GameRuntime } from "./runtime";
+import { keyboardCode } from "./controls";
 import {
   ISLANDS,
   standings,
@@ -161,9 +162,11 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<Difficulty>(
     saved.difficulty || "normal",
   );
-  const [quality, setQuality] = useState(saved.quality || "high");
+  const [quality, setQuality] = useState(
+    saved.quality || (matchMedia("(pointer:coarse)").matches ? "low" : "high"),
+  );
   const [volume, setVolume] = useState(saved.volume ?? 0.35);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(saved.muted || false);
   const [kind, setKind] = useState(
     new URLSearchParams(location.search).has("room") ? "join" : "practice",
   );
@@ -174,6 +177,7 @@ export default function App() {
     null,
   );
   const [home, setHome] = useState(true);
+  const [runtimeReady, setRuntimeReady] = useState(false);
   const [status, setStatus] = useState("");
   const [copied, setCopied] = useState(false);
   const [, refresh] = useState(0);
@@ -195,6 +199,7 @@ export default function App() {
       return;
     }
     runtime.current = r;
+    setRuntimeReady(true);
     r.onChange = () => {
       setHome(r.home);
       setStatus(r.status);
@@ -231,7 +236,7 @@ export default function App() {
     }
     localStorage.setItem(
       "jenny-settings",
-      JSON.stringify({ lang, name, difficulty, quality, volume }),
+      JSON.stringify({ lang, name, difficulty, quality, volume, muted }),
     );
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
   }, [lang, name, difficulty, quality, volume, muted]);
@@ -249,7 +254,8 @@ export default function App() {
     const onKey = (e: KeyboardEvent, down: boolean) => {
       const r = runtime.current;
       if (!r || r.home || e.target instanceof HTMLInputElement) return;
-      if (e.code === "Escape" && down) {
+      const code = keyboardCode(e);
+      if (code === "Escape" && down) {
         if (!e.repeat) {
           setModal((old) => {
             r.menu(!old);
@@ -261,12 +267,15 @@ export default function App() {
       if (modal) return;
       if (
         ["KeyW", "KeyA", "KeyS", "KeyD", ...Object.keys(actionKeys)].includes(
-          e.code,
+          code,
         )
       ) {
         e.preventDefault();
-        if (down) keys.current.add(e.code);
-        else keys.current.delete(e.code);
+        if (down) {
+          keys.current.add(code);
+          // Queue a fresh tap so keyup before the simulation tick cannot lose it.
+          if (!e.repeat && actionKeys[code]) r.actions.add(actionKeys[code]);
+        } else keys.current.delete(code);
         delete r.input.target;
         r.input.throttle =
           Number(keys.current.has("KeyW")) - Number(keys.current.has("KeyS"));
@@ -574,6 +583,7 @@ export default function App() {
                 className="sail-button"
                 onClick={start}
                 disabled={
+                  !runtimeReady ||
                   status === "connecting" ||
                   (kind === "join" && room.length !== 5)
                 }

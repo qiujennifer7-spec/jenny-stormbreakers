@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { WebSocket } from "ws";
 import assert from "node:assert/strict";
+import { writeFileSync } from "node:fs";
 const session = "jenny-touch";
 const run = (...args) =>
   execFileSync("agent-browser", ["--session", session, ...args], {
@@ -77,19 +78,22 @@ run("screenshot", process.cwd() + "/artifacts/touch-landscape.png");
 run("set", "viewport", "768", "1024");
 assert.equal(read("document.documentElement.scrollWidth>innerWidth"), false);
 run("screenshot", process.cwd() + "/artifacts/ipad-portrait.png");
-console.log(
-  JSON.stringify(
-    {
-      passed: true,
-      initial,
-      after,
-      stopped,
-      cooldown,
-      pause: timer,
-      viewports: ["390x844", "844x390", "768x1024"],
-    },
-    null,
-    2,
-  ),
+const report = {
+  passed: true,
+  online: !!process.env.TEST_ONLINE,
+  method:
+    "Native multi-touch event injection in desktop Chromium; emulated viewports",
+  initial,
+  after,
+  stopped,
+  cooldown,
+  pause: timer,
+  viewports: ["390x844", "844x390", "768x1024"],
+};
+writeFileSync(
+  `artifacts/touch-${process.env.TEST_ONLINE ? "online" : "solo"}-verification.json`,
+  JSON.stringify(report, null, 2),
 );
+console.log(JSON.stringify(report, null, 2));
 ws.close();
+run("close");

@@ -1,13 +1,14 @@
 {
   "name": "jenny-stormbreakers",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "start": "tsx server/index.ts",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "package": "python3 scripts/package.py"
   },
   "dependencies": {
     "react": "^19.1.0",

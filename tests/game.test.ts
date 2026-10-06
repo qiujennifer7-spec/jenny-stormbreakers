@@ -153,3 +153,14 @@ test("storm damage does not create audio and particle bursts every simulation ti
   assert.ok(w.events.filter((e) => e.type === "hit").length < 3);
   assert.ok(w.ships[0].hp < 100);
 });
+
+test("missed cannonballs generate splash events once before being removed", () => {
+  const w = world();
+  w.ships.slice(1).forEach((s) => (s.z = 150));
+  w.ships[0].x = 0;
+  w.ships[0].z = 0;
+  fire(w, w.ships[0], "left");
+  for (let i = 0; i < 28; i++) stepWorld(w, 0.05);
+  assert.equal(w.shots.length, 0);
+  assert.equal(w.events.filter((e) => e.type === "splash").length, 3);
+});

@@ -285,7 +285,9 @@ setInterval(() => {
 }, 50);
 const port = Number(process.env.PORT || 3417);
 server.listen(port, "0.0.0.0", () =>
-  console.log(`Jenny Stormbreakers listening on ${port}`),
+  console.log(
+    `Jenny Stormbreakers listening on ${(server.address() as { port: number }).port}`,
+  ),
 );
 process.on("SIGTERM", () => {
   for (const ws of wss.clients) ws.close(1012, "server restarting");

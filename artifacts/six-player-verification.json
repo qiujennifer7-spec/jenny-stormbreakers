@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "code": "XNW52",
+  "devices": "Six independent Chromium browser processes; viewport emulation (not physical-device certification)",
+  "seventhRouted": true,
+  "explicitSeventhRejected": true,
+  "hitSync": true,
+  "scoreSync": true,
+  "respawnSync": true,
+  "AIReplacement": true,
+  "result": "1. PC Captain\n1 击沉\n135 积分\n2. iPad Captain\n0 击沉\n0 积分\n3. iPad Landscape\n0 击沉\n0 积分\n4. PC Captain 2\n0 击沉\n0 积分\n5. Phone Captain\n0 击沉\n0 积分\n6. Phone Landscape\n0 击沉\n0 积分",
+  "performance": [
+    {
+      "client": "PC Captain",
+      "viewport": "1280x800",
+      "stats": {
+        "fps": 60,
+        "frameMs": 16.7,
+        "drawCalls": 49,
+        "geometries": 86,
+        "particles": 0,
+        "particleLimit": 480,
+        "pixelRatio": 1,
+        "adaptiveScale": 1
+      }
+    },
+    {
+      "client": "Phone Captain",
+      "viewport": "390x844",
+      "stats": {
+        "fps": 60,
+        "frameMs": 16.7,
+        "drawCalls": 31,
+        "geometries": 40,
+        "particles": 0,
+        "particleLimit": 180,
+        "pixelRatio": 1,
+        "adaptiveScale": 1
+      }
+    },
+    {
+      "client": "iPad Captain",
+      "viewport": "768x1024",
+      "stats": {
+        "fps": 60,
+        "frameMs": 16.7,
+        "drawCalls": 23,
+        "geometries": 30,
+        "particles": 0,
+        "particleLimit": 180,
+        "pixelRatio": 1,
+        "adaptiveScale": 1
+      }
+    },
+    {
+      "client": "Phone Landscape",
+      "viewport": "844x390",
+      "stats": {
+        "fps": 60,
+        "frameMs": 16.7,
+        "drawCalls": 41,
+        "geometries": 42,
+        "particles": 0,
+        "particleLimit": 180,
+        "pixelRatio": 1,
+        "adaptiveScale": 1
+      }
+    },
+    {
+      "client": "iPad Landscape",
+      "viewport": "1024x768",
+      "stats": {
+        "fps": 60,
+        "frameMs": 16.7,
+        "drawCalls": 41,
+        "geometries": 40,
+        "particles": 0,
+        "particleLimit": 180,
+        "pixelRatio": 1,
+        "adaptiveScale": 1
+      }
+    },
+    {
+      "client": "PC Captain 2",
+      "viewport": "1440x900",
+      "stats": {
+        "fps": 60,
+        "frameMs": 16.7,
+        "drawCalls": 41,
+        "geometries": 46,
+        "particles": 0,
+        "particleLimit": 480,
+        "pixelRatio": 1,
+        "adaptiveScale": 1
+      }
+    }
+  ]
+}
